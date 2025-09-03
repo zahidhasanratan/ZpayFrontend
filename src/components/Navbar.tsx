@@ -24,36 +24,7 @@ export default function Navbar() {
           <NavLink to="/" className={({ isActive }) => base(isActive)}>
             Home
           </NavLink>
-          <div
-            className="relative"
-            onMouseEnter={() => setMega(true)}
-            onMouseLeave={() => setMega(false)}
-          >
-            <button className="px-3 py-2 text-sm text-gray-700 hover:text-indigo-700">
-              Solutions
-            </button>
-            {mega && (
-              <div className="absolute left-0 mt-2 w-[560px] bg-white shadow-xl rounded-xl border border-gray-100 p-6 grid grid-cols-3 gap-4">
-                {[
-                  { t: "Wallet App", d: "P2P, bills, QR", to: "/features" },
-                  { t: "Agent Portal", d: "Cash-in/out", to: "/about" },
-                  { t: "Merchant Tools", d: "POS & QR", to: "/pricing" },
-                  { t: "Security", d: "2FA, alerts", to: "/features" },
-                  { t: "Analytics", d: "Spend trends", to: "/features" },
-                  { t: "Support", d: "Help center", to: "/contact" },
-                ].map((i) => (
-                  <Link
-                    key={i.t}
-                    to={i.to}
-                    className="rounded-lg p-3 hover:bg-gray-50"
-                  >
-                    <div className="font-medium text-gray-900">{i.t}</div>
-                    <div className="text-xs text-gray-600">{i.d}</div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+
           <NavLink to="/about" className={({ isActive }) => base(isActive)}>
             About
           </NavLink>

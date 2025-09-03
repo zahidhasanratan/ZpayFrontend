@@ -1,35 +1,15 @@
 import { Routes, Route, Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import Home from "../pages/Home";
-import { useEffect } from "react";
 
-// For now, we’ll stub these routes until you add pages:
-const About = () => (
-  <div className="mx-auto max-w-7xl px-4 py-14">
-    <h1 className="text-3xl font-extrabold">About</h1>
-  </div>
-);
-const Features = () => (
-  <div className="mx-auto max-w-7xl px-4 py-14">
-    <h1 className="text-3xl font-extrabold">Features</h1>
-  </div>
-);
-const Pricing = () => (
-  <div className="mx-auto max-w-7xl px-4 py-14">
-    <h1 className="text-3xl font-extrabold">Pricing</h1>
-  </div>
-);
-const Contact = () => (
-  <div className="mx-auto max-w-7xl px-4 py-14">
-    <h1 className="text-3xl font-extrabold">Contact</h1>
-  </div>
-);
-const FAQ = () => (
-  <div className="mx-auto max-w-7xl px-4 py-14">
-    <h1 className="text-3xl font-extrabold">FAQ</h1>
-  </div>
-);
+// ✅ real page components
+import Home from "../pages/Home";
+import About from "../pages/About";
+import Features from "../pages/Features";
+import Pricing from "../pages/Pricing";
+import Contact from "../pages/Contact";
+import FAQ from "../pages/FAQ";
 
 function Layout() {
   const loc = useLocation();
