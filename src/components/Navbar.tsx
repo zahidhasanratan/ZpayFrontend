@@ -1,37 +1,47 @@
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import cn from "classnames";
-import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../store"; // ✅ type-only import
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { logout } from "../features/auth/authSlice";
 
+/** Theme helpers */
+type Theme = "light" | "dark";
+const getInitialTheme = (): Theme => {
+  const saved = localStorage.getItem("theme");
+  if (saved === "light" || saved === "dark") return saved;
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return prefersDark ? "dark" : "light";
+};
+
 export default function Navbar() {
-  const [open, setOpen] = useState(false); // mobile menu
-  const [profileOpen, setProfileOpen] = useState(false); // profile dropdown
+  const [open, setOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const navRef = useRef<HTMLDivElement | null>(null);
-  const dispatch = useDispatch();
+
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const auth = useSelector((s: RootState) => s.auth);
+  const auth = useAppSelector((s) => s.auth);
   const isAuthed = Boolean(auth.token);
   const role = auth.user?.role;
 
-  const base = (active: boolean) =>
-    cn("px-3 py-2 text-sm transition-colors", {
-      "text-indigo-700 font-semibold": active,
-      "text-gray-700 hover:text-indigo-700": !active,
-    });
+  /** Apply theme to <html class="dark"> and persist */
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
-  const roleHome =
-    role === "admin" ? "/admin" : role === "agent" ? "/agent" : "/dashboard";
-
-  // close dropdowns on outside click
+  /** Close profile dropdown on outside click */
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!navRef.current) return;
-      if (!navRef.current.contains(e.target as Node)) {
-        setProfileOpen(false);
-      }
+      if (!navRef.current.contains(e.target as Node)) setProfileOpen(false);
     }
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
@@ -44,18 +54,64 @@ export default function Navbar() {
     navigate("/");
   };
 
+  const roleHome =
+    role === "admin" ? "/admin" : role === "agent" ? "/agent" : "/dashboard";
+
+  const base = (active: boolean) =>
+    cn(
+      "px-3 py-2 text-sm transition-colors rounded-lg",
+      active
+        ? "text-blue-600 dark:text-blue-400 font-semibold"
+        : "text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400"
+    );
+
+  /** Theme toggle button */
+  const ThemeToggleBtn = (
+    <button
+      type="button"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label="Toggle color theme"
+    >
+      {theme === "dark" ? (
+        // Sun icon
+        <svg
+          className="w-5 h-5"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+        </svg>
+      ) : (
+        // Moon icon
+        <svg
+          className="w-5 h-5"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+        </svg>
+      )}
+    </button>
+  );
+
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-gray-100">
+    <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-700">
       <div
         ref={navRef}
         className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"
       >
-        {/* Brand */}
-        <Link to="/" className="font-bold text-xl text-indigo-700">
+        <Link
+          to="/"
+          className="font-bold text-xl text-blue-600 dark:text-blue-400"
+        >
           ZPay
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
           <NavLink to="/" className={({ isActive }) => base(isActive)}>
             Home
@@ -77,19 +133,20 @@ export default function Navbar() {
           </NavLink>
         </nav>
 
-        {/* Right side (auth-aware) */}
         <div className="hidden md:flex items-center gap-3">
+          {ThemeToggleBtn}
+
           {!isAuthed ? (
             <>
               <Link
                 to="/login"
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:border-indigo-700"
+                className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Log in
               </Link>
               <Link
                 to="/register"
-                className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white shadow hover:bg-indigo-700"
+                className="px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
               >
                 Sign up
               </Link>
@@ -98,22 +155,23 @@ export default function Navbar() {
             <div className="relative">
               <button
                 onClick={() => setProfileOpen((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm hover:border-gray-300"
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
                 aria-haspopup="menu"
                 aria-expanded={profileOpen}
               >
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-gray-900 text-white text-xs font-semibold">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-gray-500 text-white text-xs font-semibold">
                   {auth.user?.name?.[0]?.toUpperCase() ?? "U"}
                 </span>
-                <span className="hidden sm:block text-gray-700">
+                <span className="hidden sm:block">
                   {auth.user?.name ?? "Account"}
                 </span>
                 <svg
-                  className={cn("h-4 w-4 text-gray-500 transition", {
+                  className={cn("h-4 w-4 opacity-60 transition", {
                     "rotate-180": profileOpen,
                   })}
                   viewBox="0 0 20 20"
                   fill="currentColor"
+                  aria-hidden="true"
                 >
                   <path
                     fillRule="evenodd"
@@ -126,13 +184,12 @@ export default function Navbar() {
               {profileOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 mt-2 w-48 rounded-xl border border-gray-100 bg-white shadow-xl"
+                  className="absolute right-0 mt-2 w-48 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl"
                 >
                   <Link
                     to={roleHome}
                     onClick={() => setProfileOpen(false)}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    role="menuitem"
+                    className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     {role === "admin"
                       ? "Admin"
@@ -143,15 +200,13 @@ export default function Navbar() {
                   <Link
                     to="/profile"
                     onClick={() => setProfileOpen(false)}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    role="menuitem"
+                    className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     Profile
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    role="menuitem"
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30"
                   >
                     Logout
                   </button>
@@ -161,21 +216,20 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile hamburger */}
+        {/* mobile burger */}
         <button
           aria-label="Toggle Menu"
           className="md:hidden p-2"
           onClick={() => setOpen((v) => !v)}
         >
-          <div className="w-6 h-0.5 bg-gray-900 mb-1"></div>
-          <div className="w-6 h-0.5 bg-gray-900 mb-1"></div>
-          <div className="w-6 h-0.5 bg-gray-900"></div>
+          <div className="w-6 h-0.5 bg-gray-900 dark:bg-gray-100 mb-1"></div>
+          <div className="w-6 h-0.5 bg-gray-900 dark:bg-gray-100 mb-1"></div>
+          <div className="w-6 h-0.5 bg-gray-900 dark:bg-gray-100"></div>
         </button>
       </div>
 
-      {/* Mobile menu */}
       {open && (
-        <div className="md:hidden border-t border-gray-100 bg-white">
+        <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <div className="px-4 py-3 flex flex-col gap-1">
             {[
               { to: "/", label: "Home" },
@@ -195,44 +249,48 @@ export default function Navbar() {
               </NavLink>
             ))}
 
-            {!isAuthed ? (
-              <div className="mt-3 flex gap-2">
-                <Link
-                  to="/login"
-                  onClick={() => setOpen(false)}
-                  className="flex-1 px-4 py-2 text-sm rounded-lg border border-gray-300 text-center"
-                >
-                  Log in
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setOpen(false)}
-                  className="flex-1 px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white text-center"
-                >
-                  Sign up
-                </Link>
-              </div>
-            ) : (
-              <div className="mt-3 flex gap-2">
-                <Link
-                  to={roleHome}
-                  onClick={() => setOpen(false)}
-                  className="flex-1 px-4 py-2 text-sm rounded-lg bg-gray-900 text-white text-center"
-                >
-                  {role === "admin"
-                    ? "Admin"
-                    : role === "agent"
-                    ? "Agent"
-                    : "Dashboard"}
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex-1 px-4 py-2 text-sm rounded-lg border border-gray-300 text-center"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
+            <div className="mt-3 flex items-center gap-2">
+              {ThemeToggleBtn}
+
+              {!isAuthed ? (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setOpen(false)}
+                    className="flex-1 px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-center"
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setOpen(false)}
+                    className="flex-1 px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 text-center"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to={roleHome}
+                    onClick={() => setOpen(false)}
+                    className="flex-1 px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-sm text-center"
+                  >
+                    {role === "admin"
+                      ? "Admin"
+                      : role === "agent"
+                      ? "Agent"
+                      : "Dashboard"}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex-1 px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-center"
+                  >
+                    Logout
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
